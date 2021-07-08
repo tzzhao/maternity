@@ -42,7 +42,10 @@ export const diaperSlice = createSlice({
     removeDiaperData: (state, action: PayloadAction<number>) => {
       delete state.data[action.payload];
       deleteDiapersData(action.payload);
-    }
+    },
+    importDiaperData: (state, action: PayloadAction<{[start: number]: DiaperData}>) => {
+      state.data = {...state.data, ...action.payload};
+    },
   },
 });
 

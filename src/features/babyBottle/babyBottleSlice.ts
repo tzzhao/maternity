@@ -58,7 +58,10 @@ export const babyBottleSlice = createSlice({
     removeBabyBottleData: (state, action: PayloadAction<number>) => {
       delete state.data[action.payload];
       deleteBabyBottleData(action.payload);
-    }
+    },
+    importBabyBottleData: (state, action: PayloadAction<{[start: number]: BabyBottleData}>) => {
+      state.data = {...state.data, ...action.payload};
+    },
   },
 });
 

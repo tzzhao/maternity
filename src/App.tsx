@@ -8,6 +8,8 @@ import { BabyBottleModal } from './components/babyBottle/BabyBottleModal';
 import { BabyBottleActivity } from './components/babyBottle/BabyBottleActivity';
 import { ActivityTable } from './components/activityTable/activityTable';
 import { ManualModal } from './components/manual/ManualModal';
+import { ImportModal } from './components/data/ImportModal';
+import { ExportModal } from './components/data/ExportModal';
 
 export function App() {
   return (
@@ -20,6 +22,8 @@ export function App() {
         <BabyBottleModal />
         <DiaperModal />
         <ManualModal modalTitle='Ajouter'></ManualModal>
+        <ExportModal />
+        <ImportModal />
       </div>
       <div>
         <ActivityTable />
