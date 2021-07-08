@@ -73,6 +73,7 @@ class ImportModalBase extends Component<Props, State> {
     
             }
         }
+        this.setState({open: false});
     }
 }
 
