@@ -1,0 +1,15 @@
+{
+  "short_name": "Maternity",
+  "name": "Track your maternity data",
+  "icons": [
+    {
+      "src": "logo192.png",
+      "type": "image/svg",
+      "sizes": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
