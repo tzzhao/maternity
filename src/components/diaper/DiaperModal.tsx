@@ -19,7 +19,7 @@ class DiaperModalBase extends Component<Props, State> {
 
     public render() {
         return <>
-        <Button variant="outlined" color="primary" onClick={this.openModal}>
+        <Button variant="contained" color="primary" onClick={this.openModal}>
             Couche
         </Button>
         <Dialog open={this.state.open} onClose={this.closeModal}>

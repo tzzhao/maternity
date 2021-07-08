@@ -24,7 +24,7 @@ class BreastFeedModalBase extends Component<Props, State> {
     public render() {
         const type = this.props.type === RIGHT ? 'droit' : 'gauche';
         return <>
-        <Button variant="outlined" color="primary" onClick={this.openModal}>
+        <Button variant="contained" color="primary" onClick={this.openModal}>
             Sein {type}
         </Button>
         <Dialog open={this.state.open} onClose={this.closeModal}>

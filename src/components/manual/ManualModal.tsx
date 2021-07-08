@@ -56,7 +56,7 @@ class ManualModalBase extends Component<Props, State> {
         {this.props.iconButton ? 
         <IconButton onClick={this.openModal}>{this.props.iconButton}</IconButton>
         :
-        <Button variant='outlined' color="primary" onClick={this.openModal}>
+        <Button variant='contained' color="primary" onClick={this.openModal}>
         {this.props.modalTitle}
     </Button>
         }

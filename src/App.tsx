@@ -16,14 +16,18 @@ export function App() {
     <div className="App">
       <header className="App-header">
       </header>
-      <div className='actions'>
-        <BreastFeedModal type='l' />
-        <BreastFeedModal type='r' />
-        <BabyBottleModal />
-        <DiaperModal />
-        <ManualModal modalTitle='Ajouter'></ManualModal>
-        <ExportModal />
-        <ImportModal />
+      <div className='action-wrapper'>
+        <div className='actions'>
+          <BreastFeedModal type='l' />
+          <BreastFeedModal type='r' />
+          <BabyBottleModal />
+          <DiaperModal />
+          <ManualModal modalTitle='Ajouter'></ManualModal>
+        </div>
+        <div className='actions'>
+          <ExportModal />
+          <ImportModal />
+        </div>
       </div>
       <div>
         <ActivityTable />

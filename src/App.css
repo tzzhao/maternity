@@ -7,14 +7,17 @@
   pointer-events: none;
 }
 
-.actions {
+.action-wrapper {
   position: sticky;
   top: 0;
   background: white;
+}
+
+.actions {
   display: flex;
   flex-wrap: wrap;
-    justify-content: center;
-    z-index: 200;
+  justify-content: center;
+  z-index: 200;
 }
 
 .actions button {

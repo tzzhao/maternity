@@ -32,7 +32,7 @@ class BabyBottleModalBase extends Component<Props, State> {
 
     public render() {
         return <>
-        <Button variant="outlined" color="primary" onClick={this.openModal}>
+        <Button variant="contained" color="primary" onClick={this.openModal}>
             Biberon
         </Button>
         <Dialog open={this.state.open} onClose={this.closeModal}>
