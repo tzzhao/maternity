@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/maternity/static/css/main.812d110f.chunk.css",
-    "main.js": "/maternity/static/js/main.564e6938.chunk.js",
-    "main.js.map": "/maternity/static/js/main.564e6938.chunk.js.map",
+    "main.css": "/maternity/static/css/main.befa08e7.chunk.css",
+    "main.js": "/maternity/static/js/main.0ff82b6e.chunk.js",
+    "main.js.map": "/maternity/static/js/main.0ff82b6e.chunk.js.map",
     "runtime-main.js": "/maternity/static/js/runtime-main.034a3658.js",
     "runtime-main.js.map": "/maternity/static/js/runtime-main.034a3658.js.map",
-    "static/js/2.9afc0dfd.chunk.js": "/maternity/static/js/2.9afc0dfd.chunk.js",
-    "static/js/2.9afc0dfd.chunk.js.map": "/maternity/static/js/2.9afc0dfd.chunk.js.map",
+    "static/js/2.a48148c5.chunk.js": "/maternity/static/js/2.a48148c5.chunk.js",
+    "static/js/2.a48148c5.chunk.js.map": "/maternity/static/js/2.a48148c5.chunk.js.map",
     "index.html": "/maternity/index.html",
     "service-worker.js": "/maternity/service-worker.js",
     "service-worker.js.map": "/maternity/service-worker.js.map",
-    "static/css/main.812d110f.chunk.css.map": "/maternity/static/css/main.812d110f.chunk.css.map",
-    "static/js/2.9afc0dfd.chunk.js.LICENSE.txt": "/maternity/static/js/2.9afc0dfd.chunk.js.LICENSE.txt"
+    "static/css/main.befa08e7.chunk.css.map": "/maternity/static/css/main.befa08e7.chunk.css.map",
+    "static/js/2.a48148c5.chunk.js.LICENSE.txt": "/maternity/static/js/2.a48148c5.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.034a3658.js",
-    "static/js/2.9afc0dfd.chunk.js",
-    "static/css/main.812d110f.chunk.css",
-    "static/js/main.564e6938.chunk.js"
+    "static/js/2.a48148c5.chunk.js",
+    "static/css/main.befa08e7.chunk.css",
+    "static/js/main.0ff82b6e.chunk.js"
   ]
 }
