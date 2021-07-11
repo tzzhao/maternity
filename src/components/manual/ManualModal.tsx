@@ -6,6 +6,7 @@ import { breastFeedActions, DiaperActions } from "../../features";
 import { createFalse } from "typescript";
 import { BreastFeedData, DiaperData, LEFT, PEE, RIGHT, STOOL } from "../../interfaces";
 import { BabyBottleData } from "../../interfaces/babyBottle.interface";
+import { getInputFormattedTime } from "../../utils";
 
 interface Props extends PropsFromRedux {
     modalTitle: string,
@@ -139,21 +140,21 @@ class ManualModalBase extends Component<Props, State> {
     }
 
     private getDefaultValues = () => {
-        let defaultDate = this.getFormattedTime(Math.floor(Date.now() / 1000));
+        let defaultDate = getInputFormattedTime(Math.floor(Date.now() / 1000));
         let startDefault = defaultDate, endDefault = defaultDate, quantityDefault = getQuantity();
         if (this.props.mode) {
             if (this.props.mode === ManualModalMode.BREAST_L || this.props.mode === ManualModalMode.BREAST_R) {
                 const data = this.props.data as BreastFeedData;
-                startDefault = this.getFormattedTime(data.start);
-                endDefault = this.getFormattedTime(data.start + data.duration);
+                startDefault = getInputFormattedTime(data.start);
+                endDefault = getInputFormattedTime(data.start + data.duration);
             } else if (this.props.mode === ManualModalMode.BABY_BOTTLE) {
                 const data = this.props.data as BabyBottleData;
-                startDefault = this.getFormattedTime(data.start);
-                endDefault = this.getFormattedTime(data.start + data.duration);
+                startDefault = getInputFormattedTime(data.start);
+                endDefault = getInputFormattedTime(data.start + data.duration);
                 quantityDefault = data.quantity;
             } else {
                 const data = this.props.data as DiaperData;
-                startDefault = this.getFormattedTime(data.time);
+                startDefault = getInputFormattedTime(data.time);
             }
         }
 
@@ -162,33 +163,6 @@ class ManualModalBase extends Component<Props, State> {
             endDefault,
             quantityDefault
         }
-    }
-
-    private getFormattedTime(timeInSeconds: number) {
-        const date = new Date(timeInSeconds * 1000);
-        let month = (date.getMonth() + 1).toString();
-        if (month.length < 2) {
-            month = '0' + month;
-        }
-        let day = date.getDate().toString();
-        if (day.length < 2) {
-            day = '0' + day;
-        }
-        let hours = date.getHours().toString();
-        if (hours.length < 2) {
-            hours = '0' + hours;
-        }
-        let minutes = date.getMinutes().toString();
-        if (minutes.length < 2) {
-            minutes = '0' + minutes;
-        }
-        let seconds = date.getSeconds().toString();
-        if (seconds.length < 2) {
-            seconds = '0' + seconds;
-        }
-
-        const defaultTime = `${date.getFullYear()}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-        return defaultTime;
     }
 
     private handleChange = (evt: ChangeEvent<{ name?: string | undefined; value: unknown; }>) => {

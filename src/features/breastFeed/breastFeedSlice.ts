@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState, AppThunk } from '../../app/store';
 import {BreastFeedData, BreastFeedType, LEFT, RIGHT} from '../../interfaces/breastFeed.interfaces';
-import { deleteBreastFeedData, putBreastFeedData } from '../../utils';
+import { deleteBreastFeedData, putBreastFeedData, putManyBreastFeedData } from '../../utils';
 
 export enum BreastFeedStatus {
   IDLE, FEEDING_R, FEEDING_L
@@ -84,6 +84,7 @@ export const breastFeedSlice = createSlice({
     },
     importBreastFeedData: (state, action: PayloadAction<{[start: number]: BreastFeedData}>) => {
       state.data = {...state.data, ...action.payload};
+      putManyBreastFeedData(action.payload);
     },
     // Use the PayloadAction type to declare the contents of `action.payload`
     // incrementByAmount: (state, action: PayloadAction<number>) => {

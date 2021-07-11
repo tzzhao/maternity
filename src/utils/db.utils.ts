@@ -33,6 +33,31 @@ export async function putBabyBottleData(data: BabyBottleData) {
     db.put(ObjectStore.BABY_BOTTLE, data);
 }
 
+export async function putManyBabyBottleData(data: {[key:number] :BabyBottleData}) {
+    const transaction = db.transaction(ObjectStore.BABY_BOTTLE, 'readwrite');
+
+    return await Promise.all([...Object.values(data).map((d) => {
+        return transaction.store.put(d);
+    }), transaction.done] as Promise<any>[]);
+}
+
+export async function putManyDiaperData(data:  {[key:number] :DiaperData}) {
+    const transaction = db.transaction(ObjectStore.DIAPERS, 'readwrite');
+
+    return await Promise.all([...Object.values(data).map((d) => {
+        return transaction.store.put(d);
+    }), transaction.done] as Promise<any>[]);
+}
+
+export async function putManyBreastFeedData(data:  {[key:number] :BreastFeedData}) {
+    const transaction = db.transaction(ObjectStore.BREAST_FEED, 'readwrite');
+
+    return await Promise.all([...Object.values(data).map((d) => {
+        return transaction.store.put(d);
+    }), transaction.done] as Promise<any>[]);
+}
+
+
 export async function deleteBreastFeedData(key: number) {
     db.delete(ObjectStore.BREAST_FEED, key);
 }

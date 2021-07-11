@@ -1,11 +1,18 @@
-import { Chart } from "chart.js";
-import { createRef, PureComponent, RefObject } from "react";
+import { Button, MenuItem } from "@material-ui/core";
+import { FormControl, Input, InputLabel, Select } from "@material-ui/core";
+import { Chart, registerables } from "chart.js";
+import { ChangeEvent, createRef, PureComponent, RefObject } from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { RootState } from '../../app/store';
-import { WEEKDAYS } from "../../utils/date.utils";
+import { LEFT, PEE, RIGHT, STOOL } from "../../interfaces";
+import { BABY_BOTTLE_TYPE } from "../../interfaces/babyBottle.interface";
+import { DataModel } from "../../interfaces/data.interface";
+import { formatDate, getInputFormattedTime, MONTHS } from "../../utils/date.utils";
+
+Chart.register(...registerables);
 
 enum Mode {
-    YEAR, MONTH, WEEK
+    MONTHS, WEEKS, WEEK
 }
 
 interface Props extends PropsFromRedux {
@@ -13,52 +20,325 @@ interface Props extends PropsFromRedux {
 }
 
 interface State {
-    diaperData: any[];
-    breastFeedData: any[];
     mode: Mode;
-    startDate: Date
+    startDate: number
 }
+
 
 
 
 class SummaryChartBase extends PureComponent<Props, State> {
 
-    private containerRef: RefObject<HTMLCanvasElement> = createRef();
+    private feedContainerRef: RefObject<HTMLCanvasElement> = createRef();
+    private diaperContainerRef: RefObject<HTMLCanvasElement> = createRef();
 
-    private chart!: Chart;
+    private feedChart!: Chart;
+
+    private diaperChart!: Chart;
 
     constructor(props: Props) {
         super(props);
         this.state = {
-            diaperData: [],
-            breastFeedData: [],
             mode: Mode.WEEK,
-            startDate: new Date()
+            startDate: Math.floor((Date.now() - 6 * 24 * 60 * 60 * 1000) / 1000)
         }
     }
+    
 
     public componentDidMount() {
-        this.chart = new Chart(this.containerRef.current!, {
-            type: 'line',
+        const {labels, data: babyBottleData} = this.getBabyBottleData();
+        const {data: breastFeedData} = this.getBreastFeedData();
+        this.feedChart = new Chart(this.feedContainerRef.current!, {
+            type: 'bar',
             data: {
-                labels: WEEKDAYS,
+                labels,
                 datasets: [{
-                    label: '',
-                    data: []
-                }]
+                    yAxisID: 'babyBottleAxis',
+                    label: 'Biberon (mL)',
+                    data: babyBottleData,
+                    backgroundColor: 'lightblue'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein (temps en min)',
+                    data: breastFeedData,
+                    backgroundColor: 'green'
+                }
+            ]
+            },
+            options: {
+                scales: {
+                    breastFeedAxis: {
+                        position: 'right',
+                      }
+                }
+            }
+        });
+
+        const {data: peeData} = this.getDiapersPeeData();
+        const {data: stoolData} = this.getDiapersStoolData();
+        this.diaperChart = new Chart(this.diaperContainerRef.current!, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Pipi',
+                    data: peeData,
+                    backgroundColor: 'lightblue'
+                },
+                {
+                    label: 'Caca',
+                    data: stoolData,
+                    backgroundColor: 'orange'
+                }
+            ]
             },
             options: {}
         });
     }
 
+    private updateCharts() {
+        const {labels, data: babyBottleData} = this.getBabyBottleData();
+        const {data: breastFeedData} = this.getBreastFeedData();
+        this.feedChart.data = {
+                labels,
+                datasets: [{
+                    yAxisID: 'babyBottleAxis',
+                    label: 'Biberon (mL)',
+                    data: babyBottleData,
+                    backgroundColor: 'lightblue'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein (temps)',
+                    data: breastFeedData,
+                    backgroundColor: 'green'
+                }
+            ]
+            };
+
+        const {data: peeData} = this.getDiapersPeeData();
+        const {data: stoolData} = this.getDiapersStoolData();
+        this.diaperChart.data = {
+                labels,
+                datasets: [{
+                    label: 'Pipi',
+                    data: peeData,
+                    backgroundColor: 'lightblue'
+                },
+                {
+                    label: 'Caca',
+                    data: stoolData,
+                    backgroundColor: 'orange'
+                }
+            ]
+            };
+        this.feedChart.update();
+        this.diaperChart.update();
+    }
+
+    private getBabyBottleData = () => {
+        return this.extractData([BABY_BOTTLE_TYPE], (d: DataModel) => {
+            return d.quantity!
+        });
+    }
+
+    private getBreastFeedData = () => {
+        return this.extractData([LEFT, RIGHT], (d: DataModel) => {
+            return Math.round(d.duration! / 60);
+        });
+    }
+
+    private getDiapersPeeData = () => {
+        return this.extractData([PEE], (d: DataModel) => {
+            return 1
+        });
+    }
+
+    private getDiapersStoolData = () => {
+        return this.extractData([STOOL], (d: DataModel) => {
+            return 1
+        });
+    }
+
+    private getData = (start: number, end: number, types: string[], getCurrentValue: (d: DataModel) => number) => {
+        const nbDays = Math.round((end - start) / (24 * 60 * 60));
+        return Math.round(this.props.data.reduce((previousValue: number, currentValue: DataModel) => {
+            const isValid = types.includes(currentValue.type) && start <= currentValue.start && end > currentValue.start;
+            return previousValue + (isValid ? getCurrentValue(currentValue) : 0);
+        }, 0) / nbDays);
+    }
+
+    private extractData = (types: string[], getCurrentValue: (d: DataModel) => number) => {
+        const labels: string[] = [];
+        const data: number[] = [];
+        let date: number = this.state.startDate;
+        switch(this.state.mode) {
+            case Mode.WEEKS: {
+                for (let i = 0; i < 12; i++) {
+                    const {start, end} = this.getWeeksThreshold(date);
+                    const value = this.getData(start, end, types, getCurrentValue);
+                    date = end;
+                    labels.push(`${formatDate(start * 1000, false)}-${formatDate(end * 1000, false)}`);
+                    data.push(value);
+                }
+                break;
+            }
+            case Mode.WEEK: {
+                for (let i = 0; i < 8; i++) {
+                    const {start, end} = this.getDayThreshold(date);
+                    const value = this.getData(start, end, types, getCurrentValue);
+                    date = end;
+                    labels.push(formatDate(start * 1000, false));
+                    data.push(value);
+                }
+                break;
+            }
+            default: {
+                for (let i = 0; i < 13; i++) {
+                    const {start, end} = this.getMonthThreshold(date);
+                    const value = this.getData(start, end, types, getCurrentValue);
+                    date = end;
+                    const realDate = new Date(start * 1000);
+                    labels.push(`${MONTHS[realDate.getMonth()]} ${realDate.getFullYear()}`);
+                    data.push(value);
+                }
+                break;
+            }
+        }
+        return {data, labels};
+    }
+
+    private getDayThreshold(time: number) {
+        const d = new Date(time * 1000);
+        const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 1000;
+        const end = start + 24 * 60 * 60;
+        return {start, end};
+    }
+
+    private getWeeksThreshold(time: number) {
+        const d = new Date(time * 1000);
+        const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 1000;
+        const end = start + 7 * 24 * 60 * 60;
+        return {start, end};
+    }
+
+
+    private getMonthThreshold(time: number) {
+        const d = new Date(time * 1000);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const nextMonth = (month + 1) % 12;
+        let nextYear = nextMonth ? year : year + 1;
+        const start = new Date(year, month).getTime() / 1000;
+        const end = new Date(nextYear, nextMonth).getTime() / 1000;
+        return {start, end};
+    }
+
     public render() {
-        return <div><canvas ref={this.containerRef} /></div>;
+        if (this.feedContainerRef.current && this.diaperContainerRef.current) {
+            this.updateCharts();
+        }
+        return <>
+            <div>
+                <FormControl>
+                    <Select value={this.state.mode} onChange={this.onModeChange} MenuProps={{
+            anchorOrigin: {
+              vertical: "bottom",
+              horizontal: "left"
+            },
+            getContentAnchorEl: null
+          }}>
+                        <MenuItem value={Mode.MONTHS}>Mois</MenuItem>
+                        <MenuItem value={Mode.WEEKS}>Semaines</MenuItem>
+                        <MenuItem value={Mode.WEEK}>Jours</MenuItem>
+                    </Select>
+                </FormControl>
+                    <Button style={{
+                        padding: '0',
+                        minWidth: '20px'
+                    }} size='small' onClick={this.previousDate} variant='contained' color='primary'>{"<"}</Button>
+                    <Input
+                        style={{
+                            margin: '0 10px' 
+                        }}
+                        type='datetime-local'
+                        value={getInputFormattedTime(this.state.startDate)}
+                        onChange={this.onStartDateChange}
+                    />
+                    <Button style={{
+                        padding: '0',
+                        minWidth: '20px'
+                    }}  size='small' onClick={this.nextDate} variant='contained' color='primary'>{">"}</Button>
+
+            </div>
+            <div>
+                <canvas ref={this.feedContainerRef} />
+                <canvas ref={this.diaperContainerRef} />
+            </div>
+            </>;
+    }
+
+    private onModeChange = (event: ChangeEvent<{name?: string, value: unknown}>) => {
+        const newMode = event.target.value as Mode;
+        const defaultDate = this.getDefaultDate(newMode);
+        this.setState({mode: newMode, startDate: defaultDate});
+    }
+
+    private onStartDateChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        const date = new Date(event.target.value);
+        this.setState({startDate: date.getTime() / 1000});
+    }
+
+    private nextDate = () => {
+        this.updateDate('+');
+    }
+
+    private previousDate = () => {
+        this.updateDate('-');
+    }
+
+    private updateDate(operation: '+' | '-') {
+        const newDate = this.getDefaultDate(this.state.mode, this.state.startDate, operation);
+        this.setState({startDate: newDate});
+    }
+
+    private getDefaultDate = (mode: Mode, date?: number, operation?: '+' | '-', ) => {
+        const factor = operation === '+' ? -1 : 1; 
+        const today = date || Math.floor(Date.now() / 1000);
+        switch(mode) {
+            case Mode.MONTHS:{
+                return today - factor * 365 * 24 * 60 * 60;
+            }
+            case Mode.WEEKS: {
+                return today - factor * 11 * 7 * 24 * 60 * 60;
+            }
+            default: {
+                return today - factor * 7 * 24 * 60 * 60;
+            }
+        }
     }
 }
 
-const mapState = (state: RootState) => ({
-    data: state.breastFeed.data,
-})
+const mapState = (state: RootState) => {
+    const babyBottleData: DataModel[] = Object.values(state.babyBottle.data).map((babyData => {
+        return {type: BABY_BOTTLE_TYPE, start: babyData.start, duration: babyData.duration, quantity: babyData.quantity };
+    }));
+    const breastFeedData: DataModel[]  = Object.values(state.breastFeed.data).map((data => {
+        return {type: data.type, start: data.start, duration: data.duration };
+    }));
+    const diaperData: DataModel[]  = Object.values(state.diaper.data).map((data => {
+        return {type: data.type, start: data.time };
+    }));
+    const data: DataModel[] = [...babyBottleData, ...breastFeedData, ...diaperData];
+    data.sort((a: DataModel, b: DataModel) => {
+        return b.start - a.start;
+    })
+
+    return {
+        data
+    };
+}
 
 const connector = connect(mapState);
 

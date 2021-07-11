@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState, AppThunk } from '../../app/store';
 import {BabyBottleData} from '../../interfaces/babyBottle.interface';
-import { deleteBabyBottleData, putBabyBottleData } from '../../utils';
+import { deleteBabyBottleData, putBabyBottleData, putManyBabyBottleData } from '../../utils';
 
 export enum BabyBottleStatus {
   IDLE, FEEDING
@@ -61,6 +61,7 @@ export const babyBottleSlice = createSlice({
     },
     importBabyBottleData: (state, action: PayloadAction<{[start: number]: BabyBottleData}>) => {
       state.data = {...state.data, ...action.payload};
+      putManyBabyBottleData(action.payload);
     },
   },
 });

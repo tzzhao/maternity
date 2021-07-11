@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState, AppThunk } from '../../app/store';
 import {DiaperData, PEE, STOOL} from '../../interfaces/diaper.interfaces';
-import { deleteDiapersData, putDiapersData } from '../../utils';
+import { deleteDiapersData, putDiapersData, putManyDiaperData } from '../../utils';
 
 export interface DiaperState {
   data: {[start: number]: DiaperData};
@@ -45,6 +45,7 @@ export const diaperSlice = createSlice({
     },
     importDiaperData: (state, action: PayloadAction<{[start: number]: DiaperData}>) => {
       state.data = {...state.data, ...action.payload};
+      putManyDiaperData(action.payload);
     },
   },
 });

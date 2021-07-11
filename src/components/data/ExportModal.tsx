@@ -3,6 +3,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import { connect, ConnectedProps } from "react-redux";
 import { breastFeedActions } from "../../features/breastFeed/breastFeedSlice";
 import { RootState } from "../../app/store";
+import { download } from "../../utils/download.utils";
 
 interface Props extends PropsFromRedux {
 }
@@ -35,6 +36,9 @@ class ExportModalBase extends Component<Props, State> {
                 </TextField>
             </DialogContent>
             <DialogActions>
+            <Button onClick={this.download} color="secondary">
+                Télécharger
+            </Button>
             <Button onClick={this.copyToClipboard} color="secondary">
                 Copier
             </Button>
@@ -44,6 +48,9 @@ class ExportModalBase extends Component<Props, State> {
             </DialogActions>
         </Dialog>
         </>
+    }
+    private download = () => {
+        download(this.props.state, `maternity-data-${Date.now()}`);
     }
 
     private copyToClipboard = () => {

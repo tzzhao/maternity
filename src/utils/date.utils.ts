@@ -1,4 +1,4 @@
-export function formatDate(date: number | string) {
+export function formatDate(date: number | string, withTime: boolean = true) {
     var d = new Date(date),
         month = '' + (d.getMonth() + 1),
         day = '' + d.getDate(),
@@ -16,7 +16,7 @@ export function formatDate(date: number | string) {
     if (seconds.length < 2) seconds = '0' + seconds;
 
     const dayString = [year, month, day].join('-');
-    return `${dayString} ${hours}:${minutes}:${seconds}`;
+    return dayString + (withTime ? ` ${hours}:${minutes}:${seconds}` : '');
 }
 
 export function formatDuration(duration: number) {
@@ -51,4 +51,35 @@ export function getDaysOfMonth(year: number, month: number) {
         dateArray.push((d+1).toString());
     }
     return dateArray;
+}
+
+export function getInputFormattedTime(timeInSeconds: number, useTime: boolean = true) {
+    const date = new Date(timeInSeconds * 1000);
+    let month = (date.getMonth() + 1).toString();
+    if (month.length < 2) {
+        month = '0' + month;
+    }
+    let day = date.getDate().toString();
+    if (day.length < 2) {
+        day = '0' + day;
+    }
+    let hours = date.getHours().toString();
+    if (hours.length < 2) {
+        hours = '0' + hours;
+    }
+    let minutes = date.getMinutes().toString();
+    if (minutes.length < 2) {
+        minutes = '0' + minutes;
+    }
+    let seconds = date.getSeconds().toString();
+    if (seconds.length < 2) {
+        seconds = '0' + seconds;
+    }
+
+    if (!useTime) {
+        return `${date.getFullYear()}-${month}-${day}`;
+    }
+
+    const defaultTime = `${date.getFullYear()}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    return defaultTime;
 }
