@@ -16,7 +16,7 @@ setTimeout(() => {
       console.log(babyBottleData, breastFeedData, allDiapersData);
       store.dispatch(babyBottleActions.loadData(arrayToObject(babyBottleData, 'start')));
       store.dispatch(breastFeedActions.loadData(arrayToObject(breastFeedData, 'start')));
-      store.dispatch(DiaperActions.loadData(arrayToObject(allDiapersData, 'time')));
+      store.dispatch(DiaperActions.loadData(arrayToObject(allDiapersData, 'start')));
     });
   });
 

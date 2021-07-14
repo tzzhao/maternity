@@ -19,6 +19,27 @@ export function formatDate(date: number | string, withTime: boolean = true) {
     return dayString + (withTime ? ` ${hours}:${minutes}:${seconds}` : '');
 }
 
+export function formatDate2(date: number | string, withTime: boolean = true) {
+    var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear() - 2000,
+        hours = '' + d.getHours(),
+        minutes = '' + d.getMinutes(),
+        seconds = '' + d.getSeconds();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+    if (hours.length < 2) hours = '0' + hours;
+    if (minutes.length < 2) minutes = '0' + minutes;
+    if (seconds.length < 2) seconds = '0' + seconds;
+
+    const dayString = [day, month, year].join('/');
+    return (withTime ? `${hours}:${minutes}:${seconds} ` : '') + dayString;
+}
+
 export function formatDuration(duration: number) {
     let seconds = duration;
     let minutes = Math.floor(seconds / 60);

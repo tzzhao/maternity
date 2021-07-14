@@ -7,7 +7,7 @@ import { RootState } from '../../app/store';
 import { LEFT, PEE, RIGHT, STOOL } from "../../interfaces";
 import { BABY_BOTTLE_TYPE } from "../../interfaces/babyBottle.interface";
 import { DataModel } from "../../interfaces/data.interface";
-import { formatDate, getInputFormattedTime, MONTHS } from "../../utils/date.utils";
+import { formatDate2, getInputFormattedTime, MONTHS } from "../../utils/date.utils";
 
 Chart.register(...registerables);
 
@@ -48,6 +48,8 @@ class SummaryChartBase extends PureComponent<Props, State> {
     public componentDidMount() {
         const {labels, data: babyBottleData} = this.getBabyBottleData();
         const {data: breastFeedData} = this.getBreastFeedData();
+        const {data: rightBreastData} = this.getRightBreastFeedData();
+        const {data: leftBreastData} = this.getLeftBreastFeedData();
         this.feedChart = new Chart(this.feedContainerRef.current!, {
             type: 'bar',
             data: {
@@ -63,6 +65,18 @@ class SummaryChartBase extends PureComponent<Props, State> {
                     label: 'Sein (temps en min)',
                     data: breastFeedData,
                     backgroundColor: 'green'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein G',
+                    data: leftBreastData,
+                    backgroundColor: 'lightgreen'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein D',
+                    data: rightBreastData,
+                    backgroundColor: 'darkgreen'
                 }
             ]
             },
@@ -71,6 +85,12 @@ class SummaryChartBase extends PureComponent<Props, State> {
                     breastFeedAxis: {
                         position: 'right',
                       }
+                },
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        maxHeight: 50
+                    }
                 }
             }
         });
@@ -93,13 +113,24 @@ class SummaryChartBase extends PureComponent<Props, State> {
                 }
             ]
             },
-            options: {}
+            options: {
+                aspectRatio: 1.5
+            }
+        });
+
+        setTimeout(() => {
+            if (this.feedChart.height < 300) {
+                this.feedChart.resize(undefined, 1000);
+                this.feedChart.update();
+            }
         });
     }
 
     private updateCharts() {
         const {labels, data: babyBottleData} = this.getBabyBottleData();
         const {data: breastFeedData} = this.getBreastFeedData();
+        const {data: rightBreastData} = this.getRightBreastFeedData();
+        const {data: leftBreastData} = this.getLeftBreastFeedData();
         this.feedChart.data = {
                 labels,
                 datasets: [{
@@ -113,6 +144,18 @@ class SummaryChartBase extends PureComponent<Props, State> {
                     label: 'Sein (temps)',
                     data: breastFeedData,
                     backgroundColor: 'green'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein G (temps en min)',
+                    data: leftBreastData,
+                    backgroundColor: 'lightgreen'
+                },
+                {
+                    yAxisID: 'breastFeedAxis',
+                    label: 'Sein D (temps en min)',
+                    data: rightBreastData,
+                    backgroundColor: 'darkgreen'
                 }
             ]
             };
@@ -140,7 +183,7 @@ class SummaryChartBase extends PureComponent<Props, State> {
     private getBabyBottleData = () => {
         return this.extractData([BABY_BOTTLE_TYPE], (d: DataModel) => {
             return d.quantity!
-        });
+        }, 1);
     }
 
     private getBreastFeedData = () => {
@@ -149,37 +192,51 @@ class SummaryChartBase extends PureComponent<Props, State> {
         });
     }
 
+    private getRightBreastFeedData = () => {
+        return this.extractData([RIGHT], (d: DataModel) => {
+            return Math.round(d.duration! / 60);
+        });
+    }
+
+
+    private getLeftBreastFeedData = () => {
+        return this.extractData([LEFT], (d: DataModel) => {
+            return Math.round(d.duration! / 60);
+        });
+    }
+
     private getDiapersPeeData = () => {
         return this.extractData([PEE], (d: DataModel) => {
             return 1
-        });
+        }, 1);
     }
 
     private getDiapersStoolData = () => {
         return this.extractData([STOOL], (d: DataModel) => {
             return 1
-        });
+        }, 1);
     }
 
-    private getData = (start: number, end: number, types: string[], getCurrentValue: (d: DataModel) => number) => {
-        const nbDays = Math.round((end - start) / (24 * 60 * 60));
+    private getData = (start: number, end: number, types: string[], getCurrentValue: (d: DataModel) => number, nbDecimals: number) => {
+        const nbDays = Math.max(1, Math.round((Math.min(end, Math.round(Date.now() / 1000)) - start) / (24 * 60 * 60)));
+        const roundingFactor: number = Math.pow(10, nbDecimals);
         return Math.round(this.props.data.reduce((previousValue: number, currentValue: DataModel) => {
             const isValid = types.includes(currentValue.type) && start <= currentValue.start && end > currentValue.start;
             return previousValue + (isValid ? getCurrentValue(currentValue) : 0);
-        }, 0) / nbDays);
+        }, 0) / nbDays * roundingFactor) / roundingFactor;
     }
 
-    private extractData = (types: string[], getCurrentValue: (d: DataModel) => number) => {
-        const labels: string[] = [];
+    private extractData = (types: string[], getCurrentValue: (d: DataModel) => number, nbDecimals: number = 0) => {
+        const labels: any[] = [];
         const data: number[] = [];
         let date: number = this.state.startDate;
         switch(this.state.mode) {
             case Mode.WEEKS: {
-                for (let i = 0; i < 12; i++) {
+                for (let i = 0; i < 6; i++) {
                     const {start, end} = this.getWeeksThreshold(date);
-                    const value = this.getData(start, end, types, getCurrentValue);
+                    const value = this.getData(start, end, types, getCurrentValue, nbDecimals);
                     date = end;
-                    labels.push(`${formatDate(start * 1000, false)}-${formatDate(end * 1000, false)}`);
+                    labels.push([`${formatDate2(start * 1000, false)}`,` à ${formatDate2(end * 1000, false)}`]);
                     data.push(value);
                 }
                 break;
@@ -187,9 +244,9 @@ class SummaryChartBase extends PureComponent<Props, State> {
             case Mode.WEEK: {
                 for (let i = 0; i < 8; i++) {
                     const {start, end} = this.getDayThreshold(date);
-                    const value = this.getData(start, end, types, getCurrentValue);
+                    const value = this.getData(start, end, types, getCurrentValue, nbDecimals);
                     date = end;
-                    labels.push(formatDate(start * 1000, false));
+                    labels.push(formatDate2(start * 1000, false));
                     data.push(value);
                 }
                 break;
@@ -197,7 +254,7 @@ class SummaryChartBase extends PureComponent<Props, State> {
             default: {
                 for (let i = 0; i < 13; i++) {
                     const {start, end} = this.getMonthThreshold(date);
-                    const value = this.getData(start, end, types, getCurrentValue);
+                    const value = this.getData(start, end, types, getCurrentValue, nbDecimals);
                     date = end;
                     const realDate = new Date(start * 1000);
                     labels.push(`${MONTHS[realDate.getMonth()]} ${realDate.getFullYear()}`);
@@ -262,8 +319,8 @@ class SummaryChartBase extends PureComponent<Props, State> {
                         style={{
                             margin: '0 10px' 
                         }}
-                        type='datetime-local'
-                        value={getInputFormattedTime(this.state.startDate)}
+                        type='date'
+                        value={getInputFormattedTime(this.state.startDate, false)}
                         onChange={this.onStartDateChange}
                     />
                     <Button style={{
@@ -311,7 +368,7 @@ class SummaryChartBase extends PureComponent<Props, State> {
                 return today - factor * 365 * 24 * 60 * 60;
             }
             case Mode.WEEKS: {
-                return today - factor * 11 * 7 * 24 * 60 * 60;
+                return today - factor * 5 * 7 * 24 * 60 * 60;
             }
             default: {
                 return today - factor * 7 * 24 * 60 * 60;
@@ -328,7 +385,7 @@ const mapState = (state: RootState) => {
         return {type: data.type, start: data.start, duration: data.duration };
     }));
     const diaperData: DataModel[]  = Object.values(state.diaper.data).map((data => {
-        return {type: data.type, start: data.time };
+        return {type: data.type, start: data.start };
     }));
     const data: DataModel[] = [...babyBottleData, ...breastFeedData, ...diaperData];
     data.sort((a: DataModel, b: DataModel) => {

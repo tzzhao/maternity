@@ -21,22 +21,22 @@ export const diaperSlice = createSlice({
   // The `reducers` field lets us define reducers and generate associated actions
   reducers: {
     logPeeDiaper: (state) => {
-      const time = Math.round(Date.now() / 1000);
-      const diaperData: DiaperData = {time, type: PEE};
-      state.data = {...state.data, [time]: diaperData};
+      const start = Math.round(Date.now() / 1000);
+      const diaperData: DiaperData = {start, type: PEE};
+      state.data = {...state.data, [start]: diaperData};
       updateStorage(diaperData);
     },
     logStollDiaper: (state) => {
-        const time = Math.round(Date.now() / 1000);
-        const diaperData: DiaperData = {time, type: STOOL};
-        state.data = {...state.data, [time]: diaperData};
+        const start = Math.round(Date.now() / 1000);
+        const diaperData: DiaperData = {start, type: STOOL};
+        state.data = {...state.data, [start]: diaperData};
         updateStorage(diaperData);
     },
     loadData: (state, action: PayloadAction<{[start: number]: DiaperData}>) => {
       state.data = action.payload;
     },
     addDiaperData: (state, action: PayloadAction<DiaperData>) => {
-      state.data = {...state.data, [action.payload.time]: action.payload};
+      state.data = {...state.data, [action.payload.start]: action.payload};
       updateStorage(action.payload);
     },
     removeDiaperData: (state, action: PayloadAction<number>) => {
@@ -44,11 +44,25 @@ export const diaperSlice = createSlice({
       deleteDiapersData(action.payload);
     },
     importDiaperData: (state, action: PayloadAction<{[start: number]: DiaperData}>) => {
-      state.data = {...state.data, ...action.payload};
+      state.data = {...state.data, ...migrateTimeToStartKey(action.payload)};
       putManyDiaperData(action.payload);
     },
   },
 });
+
+function migrateTimeToStartKey(data: {[start: number]: DiaperData}): any {
+  const newData: any = {};
+  Object.values(data).forEach((d: any) => {
+    if (d.time) {
+      d.start = d.time;
+      delete d.time;
+      newData[d.start] = d;
+    } else {
+      newData[d.start] = d;
+    }
+  })
+  return newData;
+}
 
 export const DiaperActions = diaperSlice.actions;
 

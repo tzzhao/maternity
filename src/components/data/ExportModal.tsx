@@ -1,22 +1,31 @@
-import React, { Component } from "react";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@material-ui/core';
+import React, { ChangeEvent, Component } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, TextField } from '@material-ui/core';
 import { connect, ConnectedProps } from "react-redux";
 import { breastFeedActions } from "../../features/breastFeed/breastFeedSlice";
 import { RootState } from "../../app/store";
 import { download } from "../../utils/download.utils";
+import { DataModel } from "../../interfaces/data.interface";
+import { CommonData } from "../../interfaces/common.interface";
 
 interface Props extends PropsFromRedux {
 }
 
 interface State {
     open: boolean;
+    duration: ExportDuration
+}
+
+const DAY = 24 * 60 * 60;
+
+enum ExportDuration {
+    ALL, DAY, WEEK, MONTH, YEAR 
 }
 
 class ExportModalBase extends Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
-        this.state = {open: false};
+        this.state = {open: false, duration: ExportDuration.WEEK};
     }
 
     public render() {
@@ -29,10 +38,17 @@ class ExportModalBase extends Component<Props, State> {
                 Exporter
             </DialogTitle>
             <DialogContent>
-                <TextField multiline={true} id='content-to-export' inputProps={{
+                <Select value={this.state.duration} onChange={this.onDurationChange}>
+                    <MenuItem value={ExportDuration.ALL}>Tout</MenuItem>
+                    <MenuItem value={ExportDuration.YEAR}>Dernière année</MenuItem>
+                    <MenuItem value={ExportDuration.MONTH}>Dernier mois</MenuItem>
+                    <MenuItem value={ExportDuration.WEEK}>Dernière semaine</MenuItem>
+                    <MenuItem value={ExportDuration.DAY}>Dernier jour</MenuItem>
+                </Select>
+                <TextField multiline={true} rowsMax={10} id='content-to-export' inputProps={{
                     readOnly: true,
                     }}
-                value={JSON.stringify(this.props.state)}>
+                value={this.getExportContent()}>
                 </TextField>
             </DialogContent>
             <DialogActions>
@@ -51,6 +67,47 @@ class ExportModalBase extends Component<Props, State> {
     }
     private download = () => {
         download(this.props.state, `maternity-data-${Date.now()}`);
+    }
+
+    private onDurationChange = (event: ChangeEvent<{ name?: string | undefined; value: unknown; }>) => {
+        this.setState({duration: event.target.value as ExportDuration});
+    };
+
+    private getExportContent = () => {
+        const now = Date.now() / 1000;
+        let startTime: number = 0;
+        switch(this.state.duration) {
+            case ExportDuration.YEAR: {
+                startTime = now - 365 * DAY;
+                break;
+            }
+            case ExportDuration.MONTH: {
+                startTime = now - 31 * DAY;
+                break;
+            }
+            case ExportDuration.WEEK: {
+                startTime = now - 7 * DAY;
+                break;
+            }
+            case ExportDuration.DAY: {
+                startTime = now - DAY;
+                break;
+            }
+            default: {
+                return JSON.stringify(this.props.state);
+            }
+        }
+        return JSON.stringify({
+            babyBottle: this.filter(this.props.state.babyBottle, startTime, now),
+            diaper: this.filter(this.props.state.diaper, startTime, now),
+            breastFeed: this.filter(this.props.state.breastFeed, startTime, now),
+        })
+    }
+
+    private filter(data: {[key:number]: CommonData}, start: number, end: number) {
+        return Object.values(data).filter((d: CommonData) => {
+            return d.start > start && d.start < end;
+        });
     }
 
     private copyToClipboard = () => {

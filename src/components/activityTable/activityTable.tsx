@@ -2,7 +2,7 @@ import { Button, IconButton, LabelDisplayedRowsArgs, Paper, Table, TableBody, Ta
 import { ChangeEvent, PureComponent } from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { RootState } from "../../app/store";
-import { BreastFeedData, DiaperData, LEFT, PEE } from "../../interfaces";
+import { BreastFeedData, DiaperData, LEFT, PEE, STOOL } from "../../interfaces";
 import { BabyBottleData } from "../../interfaces/babyBottle.interface";
 import {formatDate, formatDuration} from '../../utils/date.utils';
 import { ManualModal, ManualModalMode } from "../manual/ManualModal";
@@ -119,8 +119,8 @@ class ActivityTableBase extends PureComponent<ActivityTableProps, ActivityTableS
     private getData() {
         const allData: any = [...Object.values(this.props.babyBottle), ...Object.values(this.props.breastFeed), ...Object.values(this.props.diaper)];
         allData.sort((a: any, b: any) => {
-            const aScore = a.start || a.time;
-            const bScore = b.start || b.time;
+            const aScore = a.start;
+            const bScore = b.start;
             return bScore - aScore;
         });
         const data: DataModel[][] = [];
@@ -135,7 +135,7 @@ class ActivityTableBase extends PureComponent<ActivityTableProps, ActivityTableS
 
     renderRows() {
         return this.state.data[this.state.page].map((d: any) => {
-            if (d.time) {
+            if (d.type === PEE || d.type === STOOL) {
                 return this.renderDiaperRow(d);
             } else if (d.quantity) {
                 return this.renderBabyBottleRow(d);
@@ -164,10 +164,10 @@ class ActivityTableBase extends PureComponent<ActivityTableProps, ActivityTableS
 
     private renderDiaperRow(data: DiaperData ) {
         const onDelete = () => {
-            this.props.removeDiaperData(data.time);
+            this.props.removeDiaperData(data.start);
         }
-        return <TableRow key={'diaper' + data.time}>
-            <TableCell key='start'>{formatDate(data.time * 1000)}</TableCell>
+        return <TableRow key={'diaper' + data.start}>
+            <TableCell key='start'>{formatDate(data.start * 1000)}</TableCell>
             <TableCell key='label'>Couche ({data.type === 'p' ? 'P' : 'C'})</TableCell>
             <TableCell key='duration'></TableCell>
             <TableCell key='quantity'></TableCell>

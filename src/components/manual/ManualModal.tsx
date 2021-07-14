@@ -154,7 +154,7 @@ class ManualModalBase extends Component<Props, State> {
                 quantityDefault = data.quantity;
             } else {
                 const data = this.props.data as DiaperData;
-                startDefault = getInputFormattedTime(data.time);
+                startDefault = getInputFormattedTime(data.start);
             }
         }
 
@@ -213,7 +213,7 @@ class ManualModalBase extends Component<Props, State> {
             }
             case ManualModalMode.DIAPER_PEE: {
                 this.props.addDiaperData({
-                    time: startTime,
+                    start: startTime,
                     type: PEE
                 });
                 break;
@@ -221,7 +221,7 @@ class ManualModalBase extends Component<Props, State> {
             }
             case ManualModalMode.DIAPER_STOOL: {
                 this.props.addDiaperData({
-                    time: startTime,
+                    start: startTime,
                     type: STOOL
                 });
                 break;

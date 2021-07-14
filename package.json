@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "homepage": "http://tzzhao.github.io/maternity",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
@@ -41,7 +42,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "gh-pages -d build",
-    "generate": "node src/scripts/generateData.js"
+    "build-scripts": "tsc --project ./tsconfig.scripts.json",
+    "generate-data": "yarn build-scripts && node ./ts-out/scripts/generateData.js"
   },
   "eslintConfig": {
     "extends": "react-app"

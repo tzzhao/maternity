@@ -2,9 +2,9 @@ import { BreastFeedData, DiaperData } from "../interfaces";
 import { BabyBottleData } from "../interfaces/babyBottle.interface";
 import * as fs from 'fs';
 
-const MAX = 15000;
+const MAX = 1000000;
 
-const start = Math.floor(new Date(2021,1,15).getTime() / 1000);
+const start = Math.floor(new Date(2019,1,15).getTime() / 1000);
 const now = Math.floor(Date.now() / 1000);
 
 let time = start;
@@ -32,14 +32,14 @@ while(time < now && dataSize < MAX) {
 	switch(type) {
 	  case 0: {
 	  	diaper[start] = {
-	  	  time: start,
+	  	  start,
 	  	  type: 'p'
 	  	};
 	    break;
 	  }
 	  case 1: {
 		diaper[start] = {
-	  	  time: start,
+	  	  start,
 	  	  type: 's'
 	  	};
 	    break;

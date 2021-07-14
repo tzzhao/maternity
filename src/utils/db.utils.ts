@@ -11,11 +11,25 @@ export const ObjectStore = {
 }
 
 export async function initDb() {
-    db = await openDB('maternity', 1, {
-        upgrade: (database: IDBPDatabase, oldVersion: number, newVersion: number | null, transaction: IDBPTransaction<any, StoreNames<any>[], 'versionchange'>) => {
-            database.createObjectStore(ObjectStore.BREAST_FEED, {keyPath: 'start'});
-            database.createObjectStore(ObjectStore.DIAPERS, {keyPath: 'time'});
-            database.createObjectStore(ObjectStore.BABY_BOTTLE, {keyPath: 'start'});
+    db = await openDB('maternity', 2, {
+        upgrade: async (database: IDBPDatabase, oldVersion: number, newVersion: number | null, transaction: IDBPTransaction<any, StoreNames<any>[], 'versionchange'>) => {
+            if (oldVersion === 1 && newVersion === 2) {
+                const diaperStore = transaction.objectStore(ObjectStore.DIAPERS);
+                const diapersData = await diaperStore.getAll();
+                const newData = diapersData.map((data) => {
+                    data.start = data.time;
+                    delete data.time;
+                    return data;
+                });
+                await database.deleteObjectStore(ObjectStore.DIAPERS);
+                const objectStore = await database.createObjectStore(ObjectStore.DIAPERS, {keyPath: 'start'});
+                await putManyDiaperData(newData, objectStore);
+                
+            } else {
+                database.createObjectStore(ObjectStore.BREAST_FEED, {keyPath: 'start'});
+                database.createObjectStore(ObjectStore.DIAPERS, {keyPath: 'start'});
+                database.createObjectStore(ObjectStore.BABY_BOTTLE, {keyPath: 'start'});
+            }
         }
     });
     return db;
@@ -41,12 +55,20 @@ export async function putManyBabyBottleData(data: {[key:number] :BabyBottleData}
     }), transaction.done] as Promise<any>[]);
 }
 
-export async function putManyDiaperData(data:  {[key:number] :DiaperData}) {
-    const transaction = db.transaction(ObjectStore.DIAPERS, 'readwrite');
+export async function putManyDiaperData(data:  {[key:number] :DiaperData}, objectStore?: any) {
 
-    return await Promise.all([...Object.values(data).map((d) => {
-        return transaction.store.put(d);
-    }), transaction.done] as Promise<any>[]);
+    if (objectStore) {
+        return await Promise.all([...Object.values(data).map((d) => {
+            return objectStore.put(d);
+        })] as Promise<any>[]);
+    } else {
+        const transaction = db.transaction(ObjectStore.DIAPERS, 'readwrite');
+
+        return await Promise.all([...Object.values(data).map((d) => {
+            return transaction.store.put(d);
+        }), transaction.done] as Promise<any>[]);
+    }
+
 }
 
 export async function putManyBreastFeedData(data:  {[key:number] :BreastFeedData}) {
