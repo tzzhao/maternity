@@ -21,7 +21,8 @@ interface Props extends PropsFromRedux {
 
 interface State {
     mode: Mode;
-    startDate: number
+    startDate: number,
+    currentData: DataModel[]
 }
 
 
@@ -31,16 +32,20 @@ class SummaryChartBase extends PureComponent<Props, State> {
 
     private feedContainerRef: RefObject<HTMLCanvasElement> = createRef();
     private diaperContainerRef: RefObject<HTMLCanvasElement> = createRef();
+    private activeContainerRef: RefObject<HTMLCanvasElement> = createRef();
 
     private feedChart!: Chart;
 
     private diaperChart!: Chart;
 
+    private activeChart!: Chart;
+
     constructor(props: Props) {
         super(props);
         this.state = {
             mode: Mode.WEEK,
-            startDate: Math.floor((Date.now() - 6 * 24 * 60 * 60 * 1000) / 1000)
+            startDate: Math.floor((Date.now() - 6 * 24 * 60 * 60 * 1000) / 1000),
+            currentData: []
         }
     }
     
@@ -62,19 +67,19 @@ class SummaryChartBase extends PureComponent<Props, State> {
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein (temps en min)',
+                    label: 'Sein (min)',
                     data: breastFeedData,
                     backgroundColor: 'green'
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein G',
+                    label: 'Sein G (min)',
                     data: leftBreastData,
                     backgroundColor: 'lightgreen'
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein D',
+                    label: 'Sein D (min)',
                     data: rightBreastData,
                     backgroundColor: 'darkgreen'
                 }
@@ -118,12 +123,26 @@ class SummaryChartBase extends PureComponent<Props, State> {
             }
         });
 
-        setTimeout(() => {
-            if (this.feedChart.height < 300) {
-                this.feedChart.resize(undefined, 1000);
-                this.feedChart.update();
+        const {data: activeData, labels: activeLabels} = this.getActiveTime();
+        this.activeChart = new Chart(this.activeContainerRef.current!,  {
+            type: 'radar',
+            data: {
+                labels: activeLabels,
+                datasets: [{
+                    label: 'Heures actives (% sur la période)',
+                    data: activeData,
+                    fill: true,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    }
+                ]
+
             }
-        });
+        })
     }
 
     private updateCharts() {
@@ -141,19 +160,19 @@ class SummaryChartBase extends PureComponent<Props, State> {
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein (temps)',
+                    label: 'Sein (min)',
                     data: breastFeedData,
                     backgroundColor: 'green'
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein G (temps en min)',
+                    label: 'Sein G (min)',
                     data: leftBreastData,
                     backgroundColor: 'lightgreen'
                 },
                 {
                     yAxisID: 'breastFeedAxis',
-                    label: 'Sein D (temps en min)',
+                    label: 'Sein D (min)',
                     data: rightBreastData,
                     backgroundColor: 'darkgreen'
                 }
@@ -176,8 +195,27 @@ class SummaryChartBase extends PureComponent<Props, State> {
                 }
             ]
             };
+
+        const {data: activeData, labels: activeLabels} = this.getActiveTime();
+        this.activeChart.data = {
+                labels: activeLabels,
+                datasets: [{
+                    label: 'Heures actives (% sur la période)',
+                    data: activeData,
+                    fill: true,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    }
+                ]
+        };
+
         this.feedChart.update();
         this.diaperChart.update();
+        this.activeChart.update();
     }
 
     private getBabyBottleData = () => {
@@ -215,6 +253,64 @@ class SummaryChartBase extends PureComponent<Props, State> {
         return this.extractData([STOOL], (d: DataModel) => {
             return 1
         }, 1);
+    }
+
+    private getActiveTime = () => {
+        let {start, end} = this.getPeriodThreshold();
+        end = Math.min(end, Math.round(Date.now() / 1000));
+        const nbDays = Math.round((end - start) / 24 / 60 / 60);
+        const data = this.props.data.filter((d) => d.start >= start && d.start < end);
+        const results: {[date: string]: Array<boolean>} = {};
+        data.forEach((d) => {
+            const start = d.start;
+            const end = d.start + (d.duration || 0);
+            const startDate = new Date(start * 1000);
+            const endDate = new Date(end * 1000);
+            const startKey = formatDate2(start * 1000, false);
+            const endKey = formatDate2(end * 1000, false);
+            const startHour = startDate.getHours();
+            const endHour = endDate.getHours();
+            const updateResults = (dayKey: string, hour: number) => {
+                let hourArray = results[dayKey];
+                if (!hourArray) {
+                    hourArray = new Array(24).fill(false);
+                    results[dayKey] = hourArray;
+                }
+                hourArray[hour] = true;
+            }
+            if (endHour < startHour) {
+                for (let i = startHour; i < 24; i++) {
+                    updateResults(startKey, i);
+                }
+                for (let i = 0; i <= endHour; i++) {
+                    updateResults(endKey, i);
+                }
+            } else {
+                for (let i = startHour; i <= endHour; i++) {
+                    updateResults(startKey, i);
+                }
+            }
+        });
+
+
+        const labels = [];
+        for (let i = 0; i < 24; i++) {
+            labels.push(i + 'h');
+        }
+        return {
+            labels,
+            data: this.getActivePercentage(nbDays, results)
+        };
+    }
+
+    private getActivePercentage(nbDays: number, results: {[date: string]: Array<boolean>}) {
+        const data: Array<number> = new Array(24).fill(0);
+        Object.values(results).forEach((r) => {
+            for (let i = 0; i < 24; i++) {
+                data[i] += (r[i] as any as number);
+            }
+        });
+        return data.map((d) => Math.round(d/nbDays * 100));
     }
 
     private getData = (start: number, end: number, types: string[], getCurrentValue: (d: DataModel) => number, nbDecimals: number) => {
@@ -281,6 +377,32 @@ class SummaryChartBase extends PureComponent<Props, State> {
     }
 
 
+    private getPeriodThreshold() {
+        const start = this.state.startDate;
+        let date = this.state.startDate;
+        switch(this.state.mode) {
+            case Mode.WEEKS: {
+                for (let i = 0; i < 6; i++) {
+                    date = this.getWeeksThreshold(date).end;
+                }
+                break;
+            }
+            case Mode.WEEK: {
+                for (let i = 0; i < 8; i++) {
+                    date = this.getDayThreshold(date).end;
+                }
+                break;
+            }
+            default: {
+                for (let i = 0; i < 13; i++) {
+                    date = this.getMonthThreshold(date).end;
+                }
+                break;
+            }
+        }
+        return {start, end: date};
+    }
+
     private getMonthThreshold(time: number) {
         const d = new Date(time * 1000);
         const year = d.getFullYear();
@@ -332,6 +454,7 @@ class SummaryChartBase extends PureComponent<Props, State> {
             <div>
                 <canvas ref={this.feedContainerRef} />
                 <canvas ref={this.diaperContainerRef} />
+                <canvas ref={this.activeContainerRef} />
             </div>
             </>;
     }
@@ -339,7 +462,9 @@ class SummaryChartBase extends PureComponent<Props, State> {
     private onModeChange = (event: ChangeEvent<{name?: string, value: unknown}>) => {
         const newMode = event.target.value as Mode;
         const defaultDate = this.getDefaultDate(newMode);
-        this.setState({mode: newMode, startDate: defaultDate});
+        this.setState({
+            mode: newMode,
+            startDate: defaultDate});
     }
 
     private onStartDateChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
